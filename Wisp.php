@@ -13,7 +13,7 @@ See WispExample.wisp for Wisp syntax examples.
 Example usage:
 $indentSize = 3; //Number of spaces you use per tab
 $phpDir = "php"; //Directory to put compiled PHP into
-$compilerEnabled = true; //Allows you to disable the compiler, Wisp will just return the PHP file path
+$compilerEnabled = true; //Allows you to disable the compiler (Wisp will not modify files)
 $wisp = new Wisp($indentSize, $phpDir, $compilerEnabled)
 require($wisp->compile("lib/useful_stuff.wisp")) //Returns the PHP file path "php/lib/useful_stuff.wisp"
 
@@ -26,6 +26,7 @@ Features todo:
 - Ability to use objects immediately after instantiation (e.g. ($x = new Foo)->bar())
 - Ability to use array keys without assigning to a variable (e.g. $x->getArray()[0])
 - Shortening of $this (e.g. $this->foo => $_foo or something similar)
+- Automatic property assignment for a method
 - Implicit returns (e.g. function add($a,$b) $a + $b returns the value of $a + $b)
 */
 class StaticWisp {
