@@ -1,9 +1,9 @@
 <?php
 /*
-Wisp Version 0.92
+Wisp Version 0.93
 by Peter West
 peterjwest3@gmail.com
-Modified: 16 Feb 2010
+Modified: 17 April 2010
 
 Introduction:
 Wisp is whitespace sensitive PHP. It lets you code in PHP without curly braces or semicolons by using indentation to control behaviour.
