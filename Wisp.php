@@ -1,6 +1,6 @@
 <?php
 /*
-Wisp Version 0.93
+Wisp Version 0.94
 by Peter West
 peterjwest3@gmail.com
 Modified: 17 April 2010
@@ -39,25 +39,32 @@ class Wisp {
 		$this->compilerEnabled = $compilerEnabled;
 		$this->fileHandler = new WispFileHandler;
 		$this->tokeniser = new WispTokeniser; }
-	
-	function compile($filePath) {
-		if ($this->compilerEnabled) 
-			if (!$this->fileHandler->exists($filePath)) throw new Exception("Wisp source file $filePath does not exist");
-			if (!$this->fileHandler->exists($this->phpPath($filePath)) || $this->fileHandler->newerThan($filePath, $this->phpPath($filePath))) {
-				$wispFile = $this->normaliseIndentation($this->fileHandler->normaliseNewlines($this->fileHandler->loadFile($filePath)));
-				$phpFile = $this->tokeniser->transform($wispFile, $this->indentSize);
-				if (!$this->fileHandler->saveFile($this->phpPath($filePath), $phpFile)) throw new Exception("Wisp cannot write to file {$this->phpPath($filePath)}"); }
-		return $this->phpPath($filePath); }
 
-	function compileFolders($folderPath) {
+	function compile() {
 		$files = array();
-		foreach (func_get_args() as $folderPath) {
-			foreach ($this->fileHandler->getDirFiles($folderPath) as $file) {
-				if ($this->isWispFile($file)) {
-					$files[] = $this->compile($folderPath."/".$file); }
-				if ($this->isPHPFile($file)) {
-					$files[] = $folderPath."/".$file; } } }
+		foreach (func_get_args() as $path) {
+			if ($this->fileHandler->isFile($path)) {
+				$files[] = $this->compileFile($path); }
+			if ($this->fileHandler->isDir($path)) {
+				foreach ($this->fileHandler->getDirFiles($path) as $file) {
+					if ($this->isWispFile($file)) {
+						$files[] = $this->compileFile($path."/".$file); }
+					if ($this->isPHPFile($file)) {
+						$files[] = $path."/".$file; } } } }
 		return $files; }
+
+	function compileFile($filePath) {
+		$phpPath = $this->phpPath($filePath);
+		if ($this->compilerEnabled) 
+			if (!$this->isWispFile($filePath) || !$this->fileHandler->exists($filePath)) 
+				throw new Exception("Wisp source file $filePath does not exist");
+			if (!$this->fileHandler->exists($phpPath) || $this->fileHandler->newerThan($filePath, $phpPath)) {
+				$wispFile = $this->fileHandler->normaliseNewlines($this->fileHandler->loadFile($filePath));
+				$wispFile = $this->normaliseIndentation($wispFile);
+				$phpFile = $this->tokeniser->transform($wispFile, $this->indentSize);
+				if (!$this->fileHandler->saveFile($phpPath, $phpFile)) 
+					throw new Exception("Wisp cannot write to file $phpPath"); }
+		return $phpPath; }
 
 	function isPHPFile($file) { return preg_match("~.php$~", $file); }
 	function isWispFile($file) { return preg_match("~.wisp$~", $file); }
@@ -71,6 +78,12 @@ class WispFileHandler {
 	function exists($filePath) { return file_exists($filePath); }
 	function newerThan($filePath1, $filePath2) { return filemtime($filePath1) > filemtime($filePath2); }
 	function normaliseNewlines($file) { return preg_replace("~\r\n|\r~", "\n", $file); }
+	
+	function isFile($filePath) {
+		return is_file($filePath); }
+		
+	function isDir($dirPath) {
+		return is_dir($dirPath); }
 	
 	function getDirFiles($dirPath) {
 		if (!$this->exists($dirPath)) throw new Exception("Directory does not exist");
