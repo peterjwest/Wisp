@@ -40,19 +40,19 @@ class Wisp {
 		$this->fileHandler = new WispFileHandler;
 		$this->tokeniser = new WispTokeniser; }
 
-	function compile() {
-		$files = array();
-		foreach (func_get_args() as $path) {
-			if ($this->fileHandler->isFile($path)) {
-				$files[] = $this->compileFile($path); }
-			if ($this->fileHandler->isDir($path)) {
-				foreach ($this->fileHandler->getDirFiles($path) as $file) {
-					if ($this->isWispFile($file)) {
-						$files[] = $this->compileFile($path."/".$file); }
-					if ($this->isPHPFile($file)) {
-						$files[] = $path."/".$file; } } } }
-		return $files; }
+	function compile() { return $this->compileEach(func_get_args()); }
 
+	function compileEach($filePaths) {
+		$files = array();
+		foreach ($filePaths as $path) {
+			if (is_array($path)) {
+				$files = array_merge($files, $this->compileEach($path)); }
+			else if ($this->fileHandler->isFile($path) && $this->isWispFile($path)) {
+				$files[] = $this->compileFile($path); }
+			else if ($this->fileHandler->isDir($path)) {
+				$files = array_merge($files, $this->compileEach($this->fileHandler->getDirFiles($path))); } }
+		return $files; }		
+		
 	function compileFile($filePath) {
 		$phpPath = $this->phpPath($filePath);
 		if ($this->compilerEnabled) 
@@ -73,23 +73,21 @@ class Wisp {
 	function nSpaces($size) { return $size > 0 ? ' '.$this->nSpaces($size - 1) : null; } }
 
 class WispFileHandler {
-	function createDir($dir) { if ($dir && !file_exists($dir)) mkdir($dir, 0777, true); }
 	function loadFile($filePath) { return file_get_contents($filePath); }
 	function exists($filePath) { return file_exists($filePath); }
+	function isFile($filePath) { return is_file($filePath); }
+	function isDir($dirPath) { return is_dir($dirPath); }
+	function createDir($dir) { if (!$this->exists($dir)) mkdir($dir, 0777, true); }
 	function newerThan($filePath1, $filePath2) { return filemtime($filePath1) > filemtime($filePath2); }
 	function normaliseNewlines($file) { return preg_replace("~\r\n|\r~", "\n", $file); }
-	
-	function isFile($filePath) {
-		return is_file($filePath); }
-		
-	function isDir($dirPath) {
-		return is_dir($dirPath); }
 	
 	function getDirFiles($dirPath) {
 		if (!$this->exists($dirPath)) throw new Exception("Directory does not exist");
 		$dir = opendir($dirPath);
 		$files = array();
-		while ($file = readdir($dir)) $files[] = $file;
+		while ($filename = readdir($dir)) {
+			if ($filename !== '.' && $filename !== '..') {
+				$files[] = $dirPath."/".$filename; } }
 		closedir($dir);
 		return $files; }
 	
