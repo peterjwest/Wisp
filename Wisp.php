@@ -38,7 +38,7 @@ class Wisp {
 		$this->phpDir = $phpDir;
 		$this->compilerEnabled = $compilerEnabled;
 		$this->fileHandler = new WispFileHandler;
-		$this->tokeniser = new WispTokeniser; }
+		$this->tokeniser = new WispTokeniser(new WispToken); }
 
 	function compile() { return $this->compileEach(func_get_args()); }
 
@@ -86,7 +86,7 @@ class WispFileHandler {
 		$dir = opendir($dirPath);
 		$files = array();
 		while ($filename = readdir($dir)) {
-			if ($filename !== '.' && $filename !== '..') {
+			if ($filename !== '.' && $filename !== '..') { 
 				$files[] = $dirPath."/".$filename; } }
 		closedir($dir);
 		return $files; }
@@ -96,11 +96,15 @@ class WispFileHandler {
 		return file_put_contents($filePath, $contents); } }
 
 class WispTokeniser {
+	function __construct($token) { $this->token = $token; }
+	
+	function getRootClass($class) { 
+		return ($parent = get_parent_class($class)) ? $this->getRootClass($parent) : $class; }
+	
 	function transform($file, $indentSize) {
 		$tokens = new WispListToken(new WispToken($file));
 		foreach (get_declared_classes() as $tokenName) {
-			$parentName = get_parent_class($tokenName);
-			if ($parentName == 'WispToken' || $parentName == 'WispListToken') {
+			if ($this->getRootClass($tokenName) === get_class($this->token)) {
 				$token = new $tokenName();
 				$token->transform($tokens); } }
 		$value = $tokens->value();
