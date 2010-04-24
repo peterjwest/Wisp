@@ -130,12 +130,10 @@ class WispToken {
 	function first($first = false) { return $first !== false ? $this->list->firstInner = $first : $this->list->firstInner; }
 	function last($last = false) { return $last !== false ? $this->list->lastInner = $last : $this->list->lastInner; }
 	function cur($cur = false) { return $cur !== false ? $this->list->curInner = $cur : $this->list->curInner; }
-	function is($class) { return get_class($this) == $class; }
+	function is($class) { return get_class($this) === $class; }
 	function to($token) { return $token instanceof WispToken && $token->list ? $token->list->curInner = $token : false; }
 	function value($value = false) { return $value !== false ? $this->value = $value : $this->value; }
-	function destroy() { $this->list = $this->next = $this->prev = $this->value = null; }
-	function debug($depth) { return $depth == 0 ? $this->value() : "[".substr(get_class($this),4)." ".$this->value()."]"; }
-	
+
 	function newInstance($value = null) { 
 		$class = get_class($this);
 		return $value === null ? new $class() : new $class($value); }
@@ -205,18 +203,6 @@ class WispListToken extends WispToken {
 	function consumePrev() { $this->isEmpty() ? $this->addInner($this->prev->remove()) : $this->firstInner->addBefore($this->prev->remove()); }
 	function ejectFirst() { if (!$this->isEmpty()) $this->addBefore($this->lastInner->remove()); }
 	function ejectLast() { if (!$this->isEmpty()) $this->addAfter($this->lastInner->remove()); }
-	
-	function destroy() { 
-		while ($this->eachInner()) { $this->curInner->destroy(); }
-		$this->curInner = $this->firstInner = $this->lastInner = null;
-		parent::destroy(); }
-	
-	function debug($depth) {
-		if ($depth == 0) return $this->value();
-		$value = null;
-		while ($this->eachInner()) { 
-			$value .= $this->curInner->debug($depth-1); }
-		return "[".substr(get_class($this),4)." ".$value."]"; }
 	
 	function value($value = null) {
 		$value = null;
@@ -359,13 +345,6 @@ class WispLine extends WispListToken {
 				$this->to($curLine); } } }
 		
 	function getIndent($value,$indentSize) { return floor(preg_match_all("~ ~",$value,$results)/$indentSize); }
-	
-	function debug($depth) {
-		if ($depth == 0) return $this->value();
-		$value = null;
-		while ($this->eachInner()) { 
-			$value .= $this->curInner->debug($depth - 1); }
-		return "[".substr(get_class($this),4)."(".$this->indent.") ".$value."]"; } }
 		
 class WispCurlyBraceOpen extends WispToken {
 	function transform($tokens) {
