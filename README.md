@@ -1,11 +1,17 @@
 ## Introduction:
-
 Wisp is whitespace sensitive PHP. It lets you code in PHP without curly braces or semicolons by using indentation to control behaviour.
 Wisp uses PHP to compile Wisp files (.wisp) to PHP files.
-See WispExample.wisp for Wisp syntax examples.
+Wisp is currently partially unit tested using Pwe (pronounced Peewee) as part of [fluidics](http://github.com/olliesaunders/fluidics)
+
+## Example Wisp syntax:
+	<?php
+	class foo 
+		function manyfoo($n) 
+			if ($n > 0) return "foo".$this->manyfoo($n - 1)
+
+See WispExample.wisp for more Wisp syntax examples.
 
 ## Example usage:
-
 	$indentSize = 3; //Number of spaces you use per tab
 	$phpDir = "php"; //Directory to put compiled PHP into
 	$compilerEnabled = true; //Allows you to disable the compiler (Wisp will not modify files)
