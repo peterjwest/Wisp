@@ -38,7 +38,7 @@ class Wisp {
 		$this->phpDir = $phpDir;
 		$this->compilerEnabled = $compilerEnabled;
 		$this->fileHandler = new WispFileHandler;
-		$this->tokeniser = new WispTokeniser(new WispToken); }
+		$this->tokeniser = new WispTokeniser(new WispToken, new WispListToken); }
 
 	function compile() { return $this->compileEach(func_get_args()); }
 
@@ -56,13 +56,15 @@ class Wisp {
 	function compileFile($filePath) {
 		$phpPath = $this->phpPath($filePath);
 		if ($this->compilerEnabled) 
-			if (!$this->isWispFile($filePath) || !$this->fileHandler->exists($filePath)) 
+			if (!$this->isWispFile($filePath)) 
+				throw new Exception("Source file $filePath is not a Wisp file");
+			if (!$this->fileHandler->exists($filePath)) 
 				throw new Exception("Wisp source file $filePath does not exist");
 			if (!$this->fileHandler->exists($phpPath) || $this->fileHandler->newerThan($filePath, $phpPath)) {
 				$wispFile = $this->fileHandler->normaliseNewlines($this->fileHandler->loadFile($filePath));
 				$wispFile = $this->normaliseIndentation($wispFile);
 				$phpFile = $this->tokeniser->transform($wispFile, $this->indentSize);
-				if (!$this->fileHandler->saveFile($phpPath, $phpFile)) 
+				if (!$this->fileHandler->saveFile($phpPath, $phpFile))
 					throw new Exception("Wisp cannot write to file $phpPath"); }
 		return $phpPath; }
 
@@ -96,19 +98,22 @@ class WispFileHandler {
 		return file_put_contents($filePath, $contents); } }
 
 class WispTokeniser {
-	function __construct($token) { $this->token = $token; }
+	function __construct($token, $listToken) { 
+		$this->token = $token; 
+		$this->listToken = $listToken; }
 	
 	function getRootClass($class) { 
 		return ($parent = get_parent_class($class)) ? $this->getRootClass($parent) : $class; }
 	
-	function transform($file, $indentSize) {
-		$tokens = new WispListToken(new WispToken($file));
+	function transform($file) {
+		$tokens = $this->listToken;
+		$this->token->value($file);
+		$tokens->addInner($this->token);
 		foreach (get_declared_classes() as $tokenName) {
 			if ($this->getRootClass($tokenName) === get_class($this->token)) {
-				$token = new $tokenName();
+				$token = new $tokenName;
 				$token->transform($tokens); } }
 		$value = $tokens->value();
-		$tokens->destroy();
 		return $value; } }
 
 class WispToken {
